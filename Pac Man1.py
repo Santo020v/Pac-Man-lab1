@@ -17,6 +17,7 @@ background.fill(pygame.Color(0, 0, 0))
 blue_color = (0, 152, 254)
 yellow_color = (253, 206, 2)
 score_ = 0
+lifes = 3
 
 
 class GameSprite(pygame.sprite.Sprite):
@@ -37,6 +38,27 @@ class Player(GameSprite):
     def update(self):
         self.rect.x += self.change_x
         self.rect.y += self.change_y
+
+        if self.rect.x > width:
+            self.rect.x = 0
+            self.angle_to_rotate = 0
+            window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
+                                (self.rect.x, self.rect.y))  # !!!!!!!!!!!!!!!
+        if self.rect.x < 0:
+            self.rect.x = width
+            self.angle_to_rotate = 180
+            window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
+                                (self.rect.x, self.rect.y))  # !!!!!!!!!!!!!!!
+        if self.rect.y > height:
+            self.rect.y = 0
+            self.angle_to_rotate = -90
+            window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
+                                (self.rect.x, self.rect.y))  # !!!!!!!!!!!!!!!
+        if self.rect.y < 0:
+            self.rect.y = height
+            self.angle_to_rotate = 90
+            window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
+                                (self.rect.x, self.rect.y))  # !!!!!!!!!!!!!!!
 
         keys = pygame.key.get_pressed()
 
@@ -88,29 +110,18 @@ class Enemy(GameSprite):
         if self.way_to_move == "RIGHT":
             self.change_x = 1
             self.change_y = 0
-            # self.angle_to_rotate = 0
-            # window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
-            #                     (self.rect.x, self.rect.y))
+
         elif self.way_to_move == "LEFT":
             self.change_x = -1
             self.change_y = 0
-            # self.angle_to_rotate = 180
-            # window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
-            #                     (self.rect.x, self.rect.y))
+
         elif self.way_to_move == "UP":
             self.change_x = 0
             self.change_y = -1
-            # self.angle_to_rotate = 90
-            # window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
-            #                     (self.rect.x, self.rect.y))
+
         elif self.way_to_move == "DOWN":
             self.change_x = 0
             self.change_y = 1
-            # self.angle_to_rotate = -90
-            # window_surface.blit(pygame.transform.rotate(self.image, self.angle_to_rotate),
-            #                     (self.rect.x, self.rect.y))
-
-        ran_var = ("RIGHT", "UP", "DOWN", "LEFT")
 
         if pygame.sprite.spritecollide(self, all_walls, False):
             for wall1 in all_walls:
@@ -371,7 +382,7 @@ def draw_map(screen):
                 all_coins.add(coin)
 
 
-draw_map(background)  # Малюємо карту
+draw_map(background)
 all_enemy = pygame.sprite.Group()
 player = Player('pacman-25735.png', width / 2 - 8, (height - (height / 2)) - 120)
 enemy1 = Enemy('fantasmas-pacman-png-1-Transparent-Images.png', width / 2 - 8, (height - (height / 2)) - 50)
@@ -388,7 +399,12 @@ font = pygame.font.Font('freesansbold.ttf', 26)
 
 
 def show_score(x, y):
-    score = font.render("Score : " + str(score_), True, (255, 255, 255))
+    score = font.render("Score : " + str(score_), True, "#98F5FF")
+    window_surface.blit(score, (x, y))
+
+
+def show_life(x, y):
+    score = font.render("Life : " + str(lifes), True, "#E066FF")
     window_surface.blit(score, (x, y))
 
 
@@ -401,40 +417,21 @@ def stop():
 
 def game_over_text():
     over_text = font.render("GAME OVER", True, (255, 255, 255))
-    window_surface.blit(over_text, (width / 2 - 80, (height - (height / 2)) - 65))
+    pygame.draw.rect(window_surface, "#EE3B3B", (320, 258, 160, 95))
+    window_surface.blit(over_text, (width / 2 - 80, (height - (height / 2)) - 55))
     stop()
 
 
 def win_text():
     over_text = font.render("YOU WIN", True, (255, 255, 255))
-    window_surface.blit(over_text, (width / 2 - 80, (height - (height / 2)) - 65))
+    pygame.draw.rect(window_surface, "#76EEC6", (320, 258, 160, 95))
+    window_surface.blit(over_text, (width / 2 - 57, (height - (height / 2)) - 55))
     stop()
 
 
 while is_running:
-
     window_surface.blit(background, (0, 0))
     pygame.transform.flip(background, True, False)
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            is_running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                is_running = False
-    for coin in all_coins:
-        if pygame.sprite.collide_rect(player, coin):
-            score_ += 1
-            all_coins.remove(coin)
-            coin = Money((0, 0, 0), coin.rect.x, coin.rect.y, 6, 6)
-            coin.draw_coin()
-    for enem in all_enemy:
-        if pygame.sprite.collide_rect(player, enem):
-            game_over_text()
-            break
-    if len(all_coins) == 0:
-        win_text()
-        break
 
     if not all_coins_collected:
         for wall in all_walls:
@@ -454,6 +451,31 @@ while is_running:
 
         all_enemy.update()
         player.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    is_running = False
+        for coin in all_coins:
+            if pygame.sprite.collide_rect(player, coin):
+                score_ += 1
+                all_coins.remove(coin)
+                coin = Money((0, 0, 0), coin.rect.x, coin.rect.y, 6, 6)
+                coin.draw_coin()
+        for enem in all_enemy:
+            if pygame.sprite.collide_rect(player, enem):
+                lifes -= 1
+                player.rect.x = width/2 - 8
+                player.rect.y = height - (height/2) - 120
+                player.angle_to_rotate = 0
+            if lifes == 0:
+                game_over_text()
+                break
+        if len(all_coins) == 0:
+            win_text()
     show_score(5, 5)
+    show_life(700, 5)
     pygame.display.update()
     clock.tick(60)
